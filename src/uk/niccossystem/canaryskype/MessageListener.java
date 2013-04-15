@@ -1,20 +1,27 @@
 package uk.niccossystem.canaryskype;
 
-import com.skype.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import com.skype.Chat;
+import com.skype.ChatMessage;
+import com.skype.ChatMessageListener;
+import com.skype.Skype;
+import com.skype.SkypeException;
 
 import net.canarymod.Canary;
+import net.canarymod.api.entity.living.humanoid.Player;
 import net.canarymod.chat.Colors;
-import net.canarymod.hook.Hook;
-import net.canarymod.hook.HookHandler;
-import net.canarymod.hook.player.ChatHook;
-import net.canarymod.plugin.PluginListener;
+import net.canarymod.chat.MessageReceiver;
+import net.canarymod.commandsys.Command;
+import net.canarymod.commandsys.CommandListener;
 
-public class MessageListener implements PluginListener, ChatMessageListener {
+public class MessageListener implements CommandListener, ChatMessageListener {
 	
 	private CanarySkype plugin;	
-	private final String chatId = "#jerry199610/$tyler-yarbrough;c2d10522f2574475";
-	private Chat chat;
-	
+	private Chat chat = null;
+	private List<ChatMessage> receivedMessages = new ArrayList<ChatMessage>();
 	
 
 	public MessageListener(CanarySkype instance) {
@@ -22,48 +29,58 @@ public class MessageListener implements PluginListener, ChatMessageListener {
 		try {
 			Skype.addChatMessageListener(this);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		System.out.println("SkypeListener activated");
-		chat = ChatWrapper.getChat(chatId);
 	}
 
 	@Override
 	public void chatMessageReceived(ChatMessage arg0) throws SkypeException {
-		// TODO Auto-generated method stub
+		
+		if (receivedMessages.contains(arg0)) return;
+		receivedMessages.add(arg0);
+		
 		Canary.getServer().broadcastMessage(Colors.LIGHT_GREEN + "[Skype] " + Colors.LIGHT_GRAY + arg0.getSenderDisplayName() + ": " + Colors.WHITE + arg0.getContent());
 	}
 
 	@Override
 	public void chatMessageSent(ChatMessage arg0) throws SkypeException {
-		// TODO Auto-generated method stu
+		if (chat == null) {
+			chat = arg0.getChat();
+			plugin.getLogman().logInfo("CanarySkype: Registered Skype chat!");
+		}
+		
 		Canary.getServer().broadcastMessage(Colors.LIGHT_GREEN + "[Skype] " + Colors.LIGHT_GRAY + arg0.getSenderDisplayName() + ": " + Colors.WHITE + arg0.getContent());
+		
 	}
 	
-	@HookHandler
-	public void onChat(ChatHook hook) {
-		hook.getPlayer().sendMessage("1");
-		plugin.getLogman().info("1");
-		if (chat == null) return;
-		hook.getPlayer().sendMessage("2");
-		plugin.getLogman().info("2");
-		if (hook.getMessage().split(" ")[0] == ".skype") {
-			hook.getPlayer().sendMessage("3");
-			plugin.getLogman().info("3");
-			String message = hook.getMessage().replaceFirst(".skype ", "");
-			try {
-				hook.getPlayer().sendMessage("4");
-				plugin.getLogman().info("4");
-				chat.send(message);
+	@Command(aliases = { "skype" },
+			description = "Send a Skype message.",
+			permissions = { "canaryskype.send" },
+			toolTip = "/skype <message>",
+			min = 2)
+	public void skypeCommand(MessageReceiver caller, String[] parameters) {
+		if (chat != null) {			
+			try {				
+				String[] params = Arrays.copyOfRange(parameters, 1, parameters.length);
+				String message = null;
+				for (String s : params) {
+					if (message != null) {
+						message = message + s + " ";								
+					} else {
+						message = s + " ";
+					}
+				}
+				if (message != null) {
+					if (message.startsWith("/skype ")) message.replaceFirst("/skype ", "");
+					chat.send("[Canary] (" + 
+					(caller instanceof Player ? ((Player) caller).getDisplayName() : "Console")
+					+ ") " + message);
+				}
 			} catch (SkypeException e) {
-				hook.getPlayer().sendMessage("5");
-				plugin.getLogman().info("5");
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		return;
+		
 	}
-	
 }

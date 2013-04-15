@@ -1,27 +1,28 @@
 package uk.niccossystem.canaryskype;
 
-import com.skype.*;
-
 import net.canarymod.Canary;
+import net.canarymod.commandsys.CommandDependencyException;
 import net.canarymod.plugin.Plugin;
 
 public class CanarySkype extends Plugin {
 
-	@Override
+	private MessageListener listener = new MessageListener(this);
+	
+	
 	public void disable() {
-		// TODO Auto-generated method stub
 		
 	}
-
-	@Override
-	public void enable() {
-		// TODO Auto-generated method stub
+	
+	public boolean enable() {
 		
-		MessageListener listener = new MessageListener(this);
-		Canary.hooks().registerListener(listener, this);
+		try {
+			Canary.commands().registerCommands(listener, this, false);
+		} catch (CommandDependencyException e) {
+			e.printStackTrace();
+		}		
 		
 		System.out.println("Enabled!");
+		return true;
 		
 	}
-
 }
