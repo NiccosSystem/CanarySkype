@@ -1,2 +1,4 @@
 main-class = uk.niccossystem.canaryskype.CanarySkype
 isLibrary = false
+author = NiccosSystem
+version = 1.0
